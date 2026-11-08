@@ -4,7 +4,7 @@ Python CDKで構成を定義し、CloudFormationで作成・更新・削除す�
 
 アプリは入力をJSONで返すだけで、SQLや入力されたコードを実行しません。脆弱性の悪用ではなく、WAFのリクエスト検査を確認します。
 
-更新日：2026年11月7日（日本時間）
+更新日：2026年11月8日（日本時間）
 
 ## 1. 現在の到達点
 
@@ -345,3 +345,43 @@ cdk deploy Lab01Stack \
 - [WAFルールグループのCount上書き](https://docs.aws.amazon.com/waf/latest/developerguide/web-acl-rule-group-override-options.html)
 - [API GatewayとLambdaのエラー](https://docs.aws.amazon.com/lambda/latest/dg/services-apigateway-errors.html)
 - [WAF料金](https://aws.amazon.com/waf/pricing/)
+
+
+## 12. ブラウザから実験するフォーム
+
+2026年11月8日追加。`application/index.html` をLambdaの `GET /` で配信します。新しいAWSリソースの追加は不要で、既存のIP制限・WAFルールを使用します。
+
+### 配置と更新
+
+- `application/index.html`：HTML・CSS・JavaScriptによる実験フォーム。
+- `application/handler.py`：ルートでHTMLを読み込み、`/search` では入力値と `labcase` をJSONで返します。
+
+```bash
+cd /home/allmay/workspace/learning_aws/awsLab/labs/lab01
+source .venv/bin/activate
+cdk diff Lab01Stack --profile default --no-change-set
+cdk deploy Lab01Stack --profile default
+```
+
+デプロイ後、現在の `ApiUrl`（末尾 `/lab/`）をブラウザで開きます。ブラウザの送信元IPが許可済みであることを確認します。VPN・プロキシなどでUbuntuと送信元が異なる場合、許可IPの確認が必要です。
+
+### 操作
+
+1. 正常通信・SQLi・XSSの入力例を選ぶか、自由入力します。
+2. 「1件送信する」を押します。例文選択だけでは送信されません。
+3. HTTPステータス・本文・送信時刻（UTCのISO形式）・リクエストIDを確認します。
+4. 自動発行した `labcase` を含む検索クエリをCloudWatch Logs Insightsへコピーします。
+5. WAFログを見て、最上位の動作と一致ルールを確認します。
+6. 必要なら「実験記録をJSONで保存」を押します。
+
+送信先は同じオリジン・同じAPIステージの `/search` に固定し、クエリ文字列はJavaScriptでエンコードします。外部CDNやJavaScriptライブラリは使いません。入力・応答は `textContent` で表示し、HTMLとして実行しません。
+
+HTTP 200だけではCount検知を確認できません。画面ではWAF検知を「未確認」と表示し、実際の判定は別途WAFログで確認します。画面上の実験記録は直近20件まで、再読み込みで消えます。AWS上のWAFログとは別です。JSONの保存はWAFログのバックアップにはなりません。
+
+### 教材の使い分け
+
+- [OWASP WSTG](https://owasp.org/www-project-web-security-testing-guide/)：Webアプリの検証観点と手順を学ぶ資料。今のラボのSQLi・XSS検証の整理に使います。
+- [MITRE ATT&CK T1190](https://attack.mitre.org/techniques/T1190/)：公開アプリの脆弱性悪用を、攻撃全体の流れに位置付ける参考です。文字列に対するWAFの一致だけではT1190を再現したとは扱いません。
+- [OWASP Juice Shop](https://owasp.org/www-project-juice-shop/)：脆弱性の悪用まで学ぶ次の段階の教材候補。現在のLambdaラボには導入していません。導入する場合は別ラボとして構成・隔離方法を設計します。
+
+ローカルではLambdaのHTML配信・JSON応答、フォームの送信先とURLエンコード、200/403/通信失敗時の処理、CDK合成を確認しました。実ブラウザでの操作・AWSへの更新デプロイ・WAFの検知実測は未実施です。

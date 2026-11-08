@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Lab01 | WAFリクエスト実験</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, sans-serif; color: #18283b; background: #f2f5f8; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    main { max-width: 920px; margin: 0 auto; padding: 36px 20px; }
+    h1 { margin: 6px 0 12px; font-size: clamp(1.6rem, 4vw, 2.2rem); }
+    h2 { font-size: 1.2rem; margin-top: 0; }
+    p, li { line-height: 1.8; }
+    .eyebrow { color: #41607d; letter-spacing: .12em; font-weight: 700; }
+    section { background: white; border: 1px solid #d5dfe9; border-radius: 12px; padding: 24px; margin: 20px 0; }
+    label { display: block; font-weight: 600; margin: 18px 0 8px; }
+    select, textarea, button { font: inherit; }
+    select, textarea { width: 100%; padding: 12px; border: 1px solid #91a5b8; border-radius: 6px; background: white; }
+    textarea { min-height: 120px; font-family: ui-monospace, monospace; }
+    button { border: 1px solid #174b7b; border-radius: 6px; padding: 11px 18px; background: #174b7b; color: white; cursor: pointer; }
+    button.secondary { background: white; color: #174b7b; }
+    button:disabled { opacity: .55; cursor: default; }
+    :focus-visible { outline: 3px solid #d78020; outline-offset: 3px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
+    .note { color: #455d73; font-size: .95rem; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #edf2f6; padding: 16px; border-radius: 6px; line-height: 1.6; }
+    a { color: #174b7b; }
+    #status { font-weight: 600; }
+  </style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">AWS LEARNING / LAB01</div>
+  <h1>WAFリクエスト実験</h1>
+  <p>入力した文字列を、このページと同じAPIの <code>GET /search</code> へ1件送信します。<br>HTTP応答を確認した後、CloudWatchでWAFの一致ルールを調べます。</p>
+  <section>
+    <h2>1. 入力して送信</h2>
+    <form id="experiment">
+      <label for="preset">入力例</label>
+      <select id="preset">
+        <option value="normal" data-payload="hello">正常通信</option>
+        <option value="sqli" data-payload="' OR 1=1 --">SQLiを模した文字列</option>
+        <option value="xss" data-payload="&lt;script&gt;alert(1)&lt;/script&gt;">XSSを模した文字列</option>
+        <option value="custom">自由入力</option>
+      </select>
+      <label for="payload">送信する文字列（q）</label>
+      <textarea id="payload" name="q" maxlength="1500" required spellcheck="false">hello</textarea>
+      <p class="note">このアプリは入力をSQLやHTMLとして実行せず、JSONとして返します。例文を選んだだけでは送信されません。</p>
+      <div class="actions">
+        <button id="send" type="submit">1件送信する</button>
+        <button id="download" class="secondary" type="button" disabled>実験記録をJSONで保存</button>
+      </div>
+    </form>
+  </section>
+  <section aria-labelledby="result-heading">
+    <h2 id="result-heading">2. HTTP応答</h2>
+    <p id="status" role="status" aria-live="polite">まだ送信していません。</p>
+    <pre id="metadata">送信時刻・labcase・リクエストIDを表示します。</pre>
+    <pre id="response">レスポンス本文を表示します。</pre>
+    <p class="note">HTTP 200はWAF検知の証拠ではありません。403でも、一致ルールはWAFログで確認してください。画面だけでCountやBlockの原因を断定しません。</p>
+  </section>
+  <section>
+    <h2>3. WAFログを確認</h2>
+    <p>東京リージョンのCloudWatch Logs Insightsで <code>aws-waf-logs-Lab01Stack</code> を選び、実験時刻を含む範囲を検索します。ログ反映には時間がかかる場合があります。</p>
+    <pre id="query">送信後、この実験だけを探すクエリを表示します。</pre>
+    <p class="note"><code>@message</code> を展開し、<code>ruleGroupList</code>・<code>nonTerminatingMatchingRules</code>・<code>labels</code> と最上位の <code>action</code> を確認します。画面の実験記録は直近20件まで、再読み込みで消えるため必要なら保存してください。WAFログはAWS側に別途保存されます。</p>
+  </section>
+  <section>
+    <h2>次の学習へ</h2>
+    <ul>
+      <li><a href="https://owasp.org/www-project-web-security-testing-guide/" target="_blank" rel="noopener noreferrer">OWASP WSTG</a>：Webの検証観点・手順を学ぶ資料。</li>
+      <li><a href="https://attack.mitre.org/techniques/T1190/" target="_blank" rel="noopener noreferrer">MITRE ATT&amp;CK T1190</a>：公開アプリの脆弱性悪用を攻撃の流れに位置付ける参考。このラボの文字列検査だけでT1190を再現・検証したとは扱いません。</li>
+    </ul>
+  </section>
+</main>
+<script>
+  "use strict";
+  const form = document.querySelector("#experiment");
+  const preset = document.querySelector("#preset");
+  const payload = document.querySelector("#payload");
+  const send = document.querySelector("#send");
+  const download = document.querySelector("#download");
+  const status = document.querySelector("#status");
+  const metadata = document.querySelector("#metadata");
+  const response = document.querySelector("#response");
+  const query = document.querySelector("#query");
+  const records = [];
+
+  preset.addEventListener("change", () => {
+    if (preset.value !== "custom") {
+      payload.value = preset.selectedOptions[0].dataset.payload;
+    }
+  });
+  payload.addEventListener("input", () => { preset.value = "custom"; });
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (send.disabled) return;
+    send.disabled = true;
+    status.textContent = "送信中…";
+    response.textContent = "";
+    // 現在のステージを維持し、同じオリジンの /search へ送る。
+    const base = location.origin + location.pathname.replace(/\/?$/, "/");
+    const url = new URL("search", base);
+    const labcase = `${preset.value}-${crypto.randomUUID()}`;
+    url.searchParams.set("q", payload.value);
+    url.searchParams.set("labcase", labcase);
+    const record = {
+      sentAt: new Date().toISOString(),
+      labcase,
+      input: payload.value,
+      url: url.href,
+      wafDetection: "未確認：CloudWatchのWAFログで確認",
+    };
+    query.textContent = `fields @timestamp, httpRequest.args, action, terminatingRuleId, @message\n| filter httpRequest.args like /${labcase}/\n| sort @timestamp desc\n| limit 20`;
+    const started = performance.now();
+    try {
+      const result = await fetch(url, {
+        method: "GET", cache: "no-store", signal: AbortSignal.timeout(15000),
+      });
+      record.httpStatus = result.status;
+      record.requestId = result.headers.get("x-amzn-requestid");
+      record.responseBody = await result.text();
+      status.textContent = `HTTP ${result.status} / WAFの検知結果はログで確認してください。`;
+      try {
+        response.textContent = JSON.stringify(JSON.parse(record.responseBody), null, 2);
+      } catch {
+        response.textContent = record.responseBody;
+      }
+    } catch (error) {
+      record.error = error.message;
+      status.textContent = "応答を取得できませんでした。通信状態とAPIの状態を確認してください。";
+      response.textContent = error.message;
+    } finally {
+      record.elapsedMs = Math.round(performance.now() - started);
+      metadata.textContent = JSON.stringify({
+        sentAt: record.sentAt, labcase, requestId: record.requestId ?? null,
+        elapsedMs: record.elapsedMs, wafDetection: record.wafDetection,
+      }, null, 2);
+      records.push(record);
+      if (records.length > 20) records.shift();
+      download.disabled = false;
+      send.disabled = false;
+    }
+  });
+
+  download.addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify(records, null, 2)], { type: "application/json" });
+    const link = document.createElement("a");
+    const blobUrl = URL.createObjectURL(blob);
+    link.href = blobUrl;
+    link.download = `lab01-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+  });
+</script>
+</body>
+</html>
