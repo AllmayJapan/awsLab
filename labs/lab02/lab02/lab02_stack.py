@@ -5,6 +5,7 @@ from aws_cdk import (
     aws_ec2 as ec2,
     aws_elasticloadbalancingv2 as elbv2,
     aws_elasticloadbalancingv2_targets as targets,
+    aws_iam as iam,
 )
 from constructs import Construct
 
@@ -130,12 +131,72 @@ class Lab02Stack(Stack):
             "systemctl enable --now lab02-web",
         )
 
+        # EC2がSystems Managerを利用するためのIAM Role
+        ssm_role = iam.Role(
+            self,
+            "WebInstanceRole",
+            assumed_by=iam.ServicePrincipal("ec2.amazonaws.com"),
+            description="IAM Role for Lab02 EC2 SSM access",
+        )
+
+        ssm_role.add_managed_policy(
+            iam.ManagedPolicy.from_aws_managed_policy_name(
+                "AmazonSSMManagedInstanceCore"
+            )
+        )
+
+        # Interface VPC Endpoint用Security Group
+        endpoint_sg = ec2.SecurityGroup(
+            self,
+            "SsmEndpointSecurityGroup",
+            vpc=vpc,
+            description="Allow HTTPS from Lab02 EC2 to SSM endpoints",
+            allow_all_outbound=False,
+        )
+
+        # EC2からVPC EndpointへのHTTPS通信を許可
+        endpoint_sg.add_ingress_rule(
+            peer=app_sg,
+            connection=ec2.Port.tcp(443),
+            description="Allow HTTPS from Web EC2",
+        )
+
+        # EC2側からVPC Endpointへの送信を許可
+        app_sg.add_egress_rule(
+            peer=endpoint_sg,
+            connection=ec2.Port.tcp(443),
+            description="Allow HTTPS to SSM endpoints",
+        )
+
+        # Systems Manager API
+        vpc.add_interface_endpoint(
+            "SsmEndpoint",
+            service=ec2.InterfaceVpcEndpointAwsService.SSM,
+            subnets=ec2.SubnetSelection(
+                subnet_type=ec2.SubnetType.PRIVATE_ISOLATED,
+            ),
+            security_groups=[endpoint_sg],
+            private_dns_enabled=True,
+        )
+
+        # Session Managerの通信チャネル
+        vpc.add_interface_endpoint(
+            "SsmMessagesEndpoint",
+            service=ec2.InterfaceVpcEndpointAwsService.SSM_MESSAGES,
+            subnets=ec2.SubnetSelection(
+                subnet_type=ec2.SubnetType.PRIVATE_ISOLATED,
+            ),
+            security_groups=[endpoint_sg],
+            private_dns_enabled=True,
+        )
+
         web_instance = ec2.Instance(
             self,
             "WebInstance",
             vpc=vpc,
             instance_type=ec2.InstanceType("t3.micro"),
             machine_image=ec2.MachineImage.latest_amazon_linux2023(),
+            role=ssm_role,
             security_group=app_sg,
             vpc_subnets=ec2.SubnetSelection(
                 subnet_type=ec2.SubnetType.PRIVATE_ISOLATED,
