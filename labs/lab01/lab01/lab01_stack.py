@@ -305,6 +305,56 @@ class Lab01Stack(Stack):
                 managed_rule("AWSManagedRulesCommonRuleSet", 20),
                 # SQLインジェクションの検査。SQLを実行するのではなく、入力パターンを検査します。
                 managed_rule("AWSManagedRulesSQLiRuleSet", 30),
+                wafv2.CfnWebACL.RuleProperty(
+                    name="LabMarker",
+                    priority=40,
+                    action=wafv2.CfnWebACL.RuleActionProperty(count={}),
+                    statement=wafv2.CfnWebACL.StatementProperty(
+                        and_statement=wafv2.CfnWebACL.AndStatementProperty(
+                            statements=[
+                                wafv2.CfnWebACL.StatementProperty(
+                                    byte_match_statement=(
+                                        wafv2.CfnWebACL.ByteMatchStatementProperty(
+                                            field_to_match=(
+                                                wafv2.CfnWebACL.FieldToMatchProperty(
+                                                    uri_path={}
+                                                )
+                                            ),
+                                            positional_constraint="EXACTLY",
+                                            search_string="/lab/search",
+                                            text_transformations=[
+                                                wafv2.CfnWebACL.TextTransformationProperty(
+                                                    priority=0,
+                                                    type="NONE",
+                                                )
+                                            ],
+                                        )
+                                    )
+                                ),
+                                wafv2.CfnWebACL.StatementProperty(
+                                    byte_match_statement=(
+                                        wafv2.CfnWebACL.ByteMatchStatementProperty(
+                                            field_to_match=(
+                                                wafv2.CfnWebACL.FieldToMatchProperty(
+                                                    single_query_argument={"Name": "q"}
+                                                )
+                                            ),
+                                            positional_constraint="EXACTLY",
+                                            search_string="waf-lab-test",
+                                            text_transformations=[
+                                                wafv2.CfnWebACL.TextTransformationProperty(
+                                                    priority=0,
+                                                    type="NONE",
+                                                )
+                                            ],
+                                        )
+                                    )
+                                ),
+                            ]
+                        ),
+                    ),
+                    visibility_config=visibility("LabMarker"),
+                ),
             ],
         )
 

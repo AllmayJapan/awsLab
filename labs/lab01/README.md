@@ -4,9 +4,30 @@ Python CDKで構成を定義し、CloudFormationで作成・更新・削除す�
 
 アプリは入力をJSONで返すだけで、SQLや入力されたコードを実行しません。脆弱性の悪用ではなく、WAFのリクエスト検査を確認します。
 
-更新日：2026年11月8日（日本時間）
+更新日：2026年11月9日（日本時間）
 
 ## 1. 現在の到達点
+
+以下の「ユーザー確認済み」は旧環境での記録です。新しいPCユーザー・AWSアカウントでのデプロイや動作確認の結果ではありません。
+
+### 別環境で使用する場合
+
+新しいターミナルでは、最初にこのラボのディレクトリへ移動し、作業場所と使用するAWSプロファイルを設定します。
+
+```bash
+# 現在の環境での配置先。別の場所に置いた場合は変更します。
+cd /home/yoshi/workspace/awsLab/labs/lab01
+export LAB01_DIR="$PWD"
+aws configure list-profiles
+# 一覧に表示された、今回使用するプロファイル名に置き換えます。
+export LAB01_AWS_PROFILE='YOUR_PROFILE_NAME'
+```
+
+以降のコマンドはこの2つの変数を使用します。旧環境の認証情報やAPI URLは引き継がず、使用するAWSアカウント、リージョン、現在の送信元IPv4を確認します。旧環境のStackの有無・削除状況は別途確認してください。
+
+この環境にはPython 3.14、AWS CLI、CDK CLIがありますが、Python依存関係は未導入です。`python3 -m venv .venv` は `ensurepip` がないため失敗しました。Ubuntuでは管理者が `sudo apt install python3.14-venv` を実行した後、セクション4.1の仮想環境作成・依存インストールを行います。Lambdaの実行環境は引き続きPython 3.12です。
+
+### 旧環境での記録
 
 - ユーザー確認済み：仮想環境の作成、CDK合成、主要リソースの確認、接続先アカウントの確認、差分確認、デプロイ。
 - ユーザー確認済み：`/search?q=hello` が修正・再デプロイ後にHTTP 200を返す。
@@ -25,9 +46,9 @@ WAF・API Gateway・Lambda → CloudWatch Logs
 
 | 項目 | 設定 |
 | --- | --- |
-| 作業場所 | `/home/allmay/workspace/learning_aws/awsLab/labs/lab01` |
+| 作業場所 | `$LAB01_DIR`（上記で設定） |
 | Stack | `Lab01Stack` |
-| AWSプロファイル | `default`（コマンドで明示） |
+| AWSプロファイル | `$LAB01_AWS_PROFILE`（コマンドで明示） |
 | リージョン | 東京 `ap-northeast-1`（`app.py` で指定） |
 | APIステージ | `lab` |
 | APIパス | `GET /`、`GET /search` |
@@ -74,7 +95,7 @@ Gitにはソース・設定・READMEを保存します。`.venv/`、`cdk.out/`�
 
 ### 4.1 プロジェクト生成と仮想環境
 
-以下は新規作成時の記録です。既存のlab01では `cdk init` を再実行しません。
+以下の `cdk init` は新規作成時の記録です。既存のlab01では再実行せず、仮想環境の作成から進めます。
 
 空の実験ディレクトリで実行します。
 
@@ -82,7 +103,7 @@ Gitにはソース・設定・READMEを保存します。`.venv/`、`cdk.out/`�
 cdk init app --language python --generate-only
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
+python -m pip install -r requirements.txt -r requirements-dev.txt
 ```
 
 `--generate-only` では仮想環境の作成も省略されるため、手動で作成します。
@@ -92,7 +113,7 @@ python -m pip install -r requirements.txt
 ### 4.2 合成と主要リソースの確認
 
 ```bash
-cd /home/allmay/workspace/learning_aws/awsLab/labs/lab01
+cd "$LAB01_DIR"
 source .venv/bin/activate
 cdk list
 cdk synth
@@ -120,8 +141,8 @@ Lambda、API Gateway、WAFのIPSet・WebACL・WebACLAssociation・LoggingConfigu
 
 ```bash
 aws configure list-profiles
-aws configure list --profile default
-aws sts get-caller-identity --profile default
+aws configure list --profile "$LAB01_AWS_PROFILE"
+aws sts get-caller-identity --profile "$LAB01_AWS_PROFILE"
 ```
 
 `Account` が学習用アカウント、`Arn` が想定する実行者であることを確認します。接続成功だけではデプロイ権限を保証しません。IAMのユーザー・ロール・所属グループの許可も確認します。AdministratorAccessがあっても組織側の制限などで拒否される場合があります。
@@ -129,7 +150,7 @@ aws sts get-caller-identity --profile default
 ```bash
 aws cloudformation describe-stacks \
   --stack-name CDKToolkit \
-  --profile default \
+  --profile "$LAB01_AWS_PROFILE" \
   --region ap-northeast-1 \
   --query 'Stacks[0].StackStatus' \
   --output text
@@ -140,7 +161,7 @@ aws cloudformation describe-stacks \
 次の `123456789012` は、確認した自分のアカウントIDに置き換えます。
 
 ```bash
-cdk bootstrap aws://123456789012/ap-northeast-1 --profile default
+cdk bootstrap aws://123456789012/ap-northeast-1 --profile "$LAB01_AWS_PROFILE"
 ```
 
 bootstrapはS3バケットやIAMロールなどを作成する初期準備です。通常はアカウント・リージョンごとに実施し、実験のたびに作り直しません。
@@ -148,7 +169,7 @@ bootstrapはS3バケットやIAMロールなどを作成する初期準備です
 ### 4.4 差分確認とデプロイ
 
 ```bash
-cdk diff Lab01Stack --profile default --no-change-set
+cdk diff Lab01Stack --profile "$LAB01_AWS_PROFILE" --no-change-set
 curl -4 https://checkip.amazonaws.com
 ```
 
@@ -158,7 +179,7 @@ curl -4 https://checkip.amazonaws.com
 
 ```bash
 cdk deploy Lab01Stack \
-  --profile default \
+  --profile "$LAB01_AWS_PROFILE" \
   --parameters "Lab01Stack:AllowedIpv4=203.0.113.10/32"
 ```
 
@@ -187,7 +208,7 @@ curl -i -G "${LAB01_API_URL}search" \
   --data-urlencode 'labcase=normal01'
 ```
 
-期待する本文：`{"message": "Search request received", "q": "hello"}`。
+期待する本文：`{"message": "Search request received", "q": "hello", "labcase": "normal01"}`。
 
 ### 5.3 SQLiを模したリクエスト
 
@@ -259,10 +280,10 @@ CloudWatch → メトリクス → すべてのメトリクス → `AWS/WAFV2` �
 ## 7. ソース修正後の更新
 
 ```bash
-cd /home/allmay/workspace/learning_aws/awsLab/labs/lab01
+cd "$LAB01_DIR"
 source .venv/bin/activate
-cdk diff Lab01Stack --profile default --no-change-set
-cdk deploy Lab01Stack --profile default
+cdk diff Lab01Stack --profile "$LAB01_AWS_PROFILE" --no-change-set
+cdk deploy Lab01Stack --profile "$LAB01_AWS_PROFILE"
 ```
 
 通常は削除せず同じStackを更新します。`Code.from_asset()` により `application/` 内のコード変更もアップロードされます。diff・deployで合成されるため、毎回synthを別途実行する必要はありません。
@@ -282,9 +303,9 @@ cdk deploy Lab01Stack --profile default
 3. 以下を実行して削除確認に応答し、完了まで確認します。
 
 ```bash
-cd /home/allmay/workspace/learning_aws/awsLab/labs/lab01
+cd "$LAB01_DIR"
 source .venv/bin/activate
-cdk destroy Lab01Stack --profile default
+cdk destroy Lab01Stack --profile "$LAB01_AWS_PROFILE"
 ```
 
 今回のロググループも削除されます。`CDKToolkit` と、そのS3バケットにアップロード済みのアセットは別管理で残ります。ラボ削除がアカウント全体の料金ゼロを意味するわけではありません。
@@ -298,9 +319,9 @@ deactivate
 ## 9. 再開する
 
 ```bash
-cd /home/allmay/workspace/learning_aws/awsLab/labs/lab01
+cd "$LAB01_DIR"
 source .venv/bin/activate
-aws sts get-caller-identity --profile default
+aws sts get-caller-identity --profile "$LAB01_AWS_PROFILE"
 curl -4 https://checkip.amazonaws.com
 ```
 
@@ -313,9 +334,9 @@ curl -4 https://checkip.amazonaws.com
 後者2つの場合は、以下の例示用IPを現在の値に置き換えます。
 
 ```bash
-cdk diff Lab01Stack --profile default --no-change-set
+cdk diff Lab01Stack --profile "$LAB01_AWS_PROFILE" --no-change-set
 cdk deploy Lab01Stack \
-  --profile default \
+  --profile "$LAB01_AWS_PROFILE" \
   --parameters "Lab01Stack:AllowedIpv4=203.0.113.10/32"
 ```
 
@@ -357,10 +378,10 @@ cdk deploy Lab01Stack \
 - `application/handler.py`：ルートでHTMLを読み込み、`/search` では入力値と `labcase` をJSONで返します。
 
 ```bash
-cd /home/allmay/workspace/learning_aws/awsLab/labs/lab01
+cd "$LAB01_DIR"
 source .venv/bin/activate
-cdk diff Lab01Stack --profile default --no-change-set
-cdk deploy Lab01Stack --profile default
+cdk diff Lab01Stack --profile "$LAB01_AWS_PROFILE" --no-change-set
+cdk deploy Lab01Stack --profile "$LAB01_AWS_PROFILE"
 ```
 
 デプロイ後、現在の `ApiUrl`（末尾 `/lab/`）をブラウザで開きます。ブラウザの送信元IPが許可済みであることを確認します。VPN・プロキシなどでUbuntuと送信元が異なる場合、許可IPの確認が必要です。
