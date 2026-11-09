@@ -3,6 +3,7 @@ from aws_cdk import (
     Stack,
     aws_ec2 as ec2,
     aws_elasticloadbalancingv2 as elbv2,
+    aws_elasticloadbalancingv2_targets as targets,
 )
 from constructs import Construct
 
@@ -76,6 +77,73 @@ class Lab02Stack(Stack):
 
         )
 
+        user_data = ec2.UserData.for_linux()
+
+        user_data.add_commands(
+            "mkdir -p /opt/lab02",
+            """cat > /opt/lab02/server.py <<'PY'
+            from http.server import BaseHTTPRequestHandler, HTTPServer
+        import json
+        import socket
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                if self.path == "/health":
+                    body = {"status": "ok"}
+                else:
+                    body = {
+                        "message": "Hello from Lab02 EC2",
+                        "hostname": socket.gethostname(),
+                        "path": self.path,
+                    }
+
+                data = json.dumps(body).encode("utf-8")
+
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+
+        HTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
+        PY""",
+            """cat > /etc/systemd/system/lab02-web.service <<'EOF'
+        [Unit]
+        Description=Lab02 Web Application
+        After=network.target
+
+        [Service]
+        ExecStart=/usr/bin/python3 /opt/lab02/server.py
+        Restart=always
+        RestartSec=3
+
+        [Install]
+        WantedBy=multi-user.target
+        EOF""",
+            "systemctl daemon-reload",
+            "systemctl enable --now lab02-web",
+        )
+
+        web_instance = ec2.Instance(
+            self,
+            "WebInstance",
+            vpc=vpc,
+            instance_type=ec2.InstanceType("t3.micro"),
+            machine_image=ec2.MachineImage.latest_amazon_linux2023(),
+            security_group=app_sg,
+            vpc_subnets=ec2.SubnetSelection(
+                subnet_type=ec2.SubnetType.PRIVATE_ISOLATED,
+            ),
+            user_data=user_data,
+            require_imdsv2=True,
+        )
+
+        CfnOutput(
+            self,
+            "WebInstanceId",
+            value=web_instance.instance_private_ip,
+        )
+
         alb = elbv2.ApplicationLoadBalancer(
             self,
             "WebAlb",
@@ -93,12 +161,21 @@ class Lab02Stack(Stack):
             open=False,
         )
 
-        listener.add_action(
-            "DefaultResponse",
-            action=elbv2.ListenerAction.fixed_response(
-                status_code=200,
-                content_type="text/plain",
-                message_body="Lob02 ALB is running",
+        listener.add_targets(
+            "WebTargetGroup",
+            port=8080,
+            protocol=elbv2.ApplicationProtocol.HTTP,
+            targets=[
+                targets.InstanceTarget(
+                    web_instance,
+                    port=8080,
+                ),
+            ],
+            health_check=elbv2.HealthCheck(
+                path="/health",
+                healthy_http_codes="200",
+                healthy_threshold_count=2,
+                unhealthy_threshold_count=2,
             ),
         )
 
