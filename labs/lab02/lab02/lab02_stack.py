@@ -6,6 +6,7 @@ from aws_cdk import (
     aws_elasticloadbalancingv2 as elbv2,
     aws_elasticloadbalancingv2_targets as targets,
     aws_iam as iam,
+    aws_wafv2 as wafv2,
 )
 from constructs import Construct
 
@@ -227,6 +228,77 @@ class Lab02Stack(Stack):
                 subnet_type=ec2.SubnetType.PUBLIC,
             ),
         )
+
+        # AWS WAF Web ACL
+        web_acl = wafv2.CfnWebACL(
+            self,
+            "Lab02WebAcl",
+            name="lab02-web-acl",
+            scope="REGIONAL",
+            default_action=wafv2.CfnWebACL.DefaultActionProperty(
+                allow={}
+            ),
+            visibility_config=wafv2.CfnWebACL.VisibilityConfigProperty(
+                cloud_watch_metrics_enabled=True,
+                metric_name="Lab02WebAcl",
+                sampled_requests_enabled=True,
+            ),
+            rules=[
+                wafv2.CfnWebACL.RuleProperty(
+                    name="AWSManagedRulesCommonRuleSet",
+                    priority=0,
+                    override_action=wafv2.CfnWebACL.OverrideActionProperty(
+                        count={}
+                    ),
+                    statement=wafv2.CfnWebACL.StatementProperty(
+                        managed_rule_group_statement=(
+                            wafv2.CfnWebACL.ManagedRuleGroupStatementProperty(
+                                vendor_name="AWS",
+                                name="AWSManagedRulesCommonRuleSet",
+                            )
+                        )
+                    ),
+                    visibility_config=(
+                        wafv2.CfnWebACL.VisibilityConfigProperty(
+                            cloud_watch_metrics_enabled=True,
+                            metric_name="CommonRuleSet",
+                            sampled_requests_enabled=True,
+                        )
+                    ),
+                ),
+                wafv2.CfnWebACL.RuleProperty(
+                    name="AWSManagedRulesSQLiRuleSet",
+                    priority=1,
+                    override_action=wafv2.CfnWebACL.OverrideActionProperty(
+                        count={}
+                    ),
+                    statement=wafv2.CfnWebACL.StatementProperty(
+                        managed_rule_group_statement=(
+                            wafv2.CfnWebACL.ManagedRuleGroupStatementProperty(
+                                vendor_name="AWS",
+                                name="AWSManagedRulesSQLiRuleSet",
+                            )
+                        )
+                    ),
+                    visibility_config=(
+                        wafv2.CfnWebACL.VisibilityConfigProperty(
+                            cloud_watch_metrics_enabled=True,
+                            metric_name="SQLiRuleSet",
+                            sampled_requests_enabled=True,
+                        )
+                    ),
+                ),
+            ],
+        )
+
+        # Web ACLをALBに関連付け
+        wafv2.CfnWebACLAssociation(
+            self,
+            "Lab02WebAclAssociation",
+            resource_arn=alb.load_balancer_arn,
+            web_acl_arn=web_acl.attr_arn,
+        )
+
 
         listener = alb.add_listener(
             "HttpListener",
