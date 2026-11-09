@@ -1,3 +1,4 @@
+import textwrap
 from aws_cdk import (
     CfnOutput,
     Stack,
@@ -79,47 +80,52 @@ class Lab02Stack(Stack):
 
         user_data = ec2.UserData.for_linux()
 
+        server_script = textwrap.dedent("""\
+            from http.server import BaseHTTPRequestHandler, HTTPServer
+            import json
+            import socket
+
+            class Handler(BaseHTTPRequestHandler):
+                def do_GET(self):
+                    if self.path == "/health":
+                        body = {"status": "ok"}
+                    else:
+                        body = {
+                            "message": "Hello from Lab02 EC2",
+                            "hostname": socket.gethostname(),
+                            "path": self.path,
+                        }
+
+                    data = json.dumps(body).encode("utf-8")
+
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", str(len(data)))
+                    self.end_headers()
+                    self.wfile.write(data)
+
+            HTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
+        """)
+        service_unit = textwrap.dedent("""\
+            [Unit]
+            Description=Lab02 Web Application
+            After=network.target
+
+            [Service]
+            ExecStart=/usr/bin/python3 /opt/lab02/server.py
+            Restart=always
+            RestartSec=3
+
+            [Install]
+            WantedBy=multi-user.target
+
+        """)
         user_data.add_commands(
             "mkdir -p /opt/lab02",
-            """cat > /opt/lab02/server.py <<'PY'
-            from http.server import BaseHTTPRequestHandler, HTTPServer
-        import json
-        import socket
-
-        class Handler(BaseHTTPRequestHandler):
-            def do_GET(self):
-                if self.path == "/health":
-                    body = {"status": "ok"}
-                else:
-                    body = {
-                        "message": "Hello from Lab02 EC2",
-                        "hostname": socket.gethostname(),
-                        "path": self.path,
-                    }
-
-                data = json.dumps(body).encode("utf-8")
-
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Content-Length", str(len(data)))
-                self.end_headers()
-                self.wfile.write(data)
-
-        HTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
-        PY""",
-            """cat > /etc/systemd/system/lab02-web.service <<'EOF'
-        [Unit]
-        Description=Lab02 Web Application
-        After=network.target
-
-        [Service]
-        ExecStart=/usr/bin/python3 /opt/lab02/server.py
-        Restart=always
-        RestartSec=3
-
-        [Install]
-        WantedBy=multi-user.target
-        EOF""",
+            "cat > /opt/lab02/server.py <<'PY'\n"
+            + server_script + "PY",
+            "cat > /etc/systemd/system/lab02-web.service << 'EOF'\n"
+            + service_unit + "EOF",
             "systemctl daemon-reload",
             "systemctl enable --now lab02-web",
         )
@@ -141,6 +147,12 @@ class Lab02Stack(Stack):
         CfnOutput(
             self,
             "WebInstanceId",
+            value=web_instance.instance_id,
+        )
+
+        CfnOutput(
+            self,
+            "WebInstancePrivateIp",
             value=web_instance.instance_private_ip,
         )
 
