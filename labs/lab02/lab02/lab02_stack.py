@@ -294,7 +294,7 @@ class Lab02Stack(Stack):
                     name="Lab02RateLimit",
                     priority=2,
                     action=wafv2.CfnWebACL.RuleActionProperty(
-                        count={}
+                        block={}
                     ),
                     statement=wafv2.CfnWebACL.StatementProperty(
                         rate_based_statement=(
