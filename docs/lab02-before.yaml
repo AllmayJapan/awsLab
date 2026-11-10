@@ -1,0 +1,719 @@
+Resources:
+  SaasWebVpcCCEE099B:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.10.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: lab02-saas-web-vpc
+    Metadata:
+      aws:cdk:path: Lab02Stack/SaasWebVpc/Resource
+  SaasWebVpcPublicSubnet1SubnetE9156DE5:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-1a
+      CidrBlock: 10.10.0.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: aws-cdk:subnet-name
+          Value: Public
+        - Key: aws-cdk:subnet-type
+          Value: Public
+        - Key: Name
+          Value: Lab02Stack/SaasWebVpc/PublicSubnet1
+      VpcId:
+        Ref: SaasWebVpcCCEE099B
+    Metadata:
+      aws:cdk:path: Lab02Stack/SaasWebVpc/PublicSubnet1/Subnet
+  SaasWebVpcPublicSubnet1RouteTable99C4D5AE:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+        - Key: Name
+          Value: Lab02Stack/SaasWebVpc/PublicSubnet1
+      VpcId:
+        Ref: SaasWebVpcCCEE099B
+    Metadata:
+      aws:cdk:path: Lab02Stack/SaasWebVpc/PublicSubnet1/RouteTable
+  SaasWebVpcPublicSubnet1RouteTableAssociation6B81695B:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: SaasWebVpcPublicSubnet1RouteTable99C4D5AE
+      SubnetId:
+        Ref: SaasWebVpcPublicSubnet1SubnetE9156DE5
+    Metadata:
+      aws:cdk:path: Lab02Stack/SaasWebVpc/PublicSubnet1/RouteTableAssociation
+  SaasWebVpcPublicSubnet1DefaultRouteA0B54CDC:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: SaasWebVpcIGW5239B50F
+      RouteTableId:
+        Ref: SaasWebVpcPublicSubnet1RouteTable99C4D5AE
+    DependsOn:
+      - SaasWebVpcVPCGW11B00E02
+    Metadata:
+      aws:cdk:path: Lab02Stack/SaasWebVpc/PublicSubnet1/DefaultRoute
+  SaasWebVpcPublicSubnet2Subnet7D7EB116:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-1c
+      CidrBlock: 10.10.1.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: aws-cdk:subnet-name
+          Value: Public
+        - Key: aws-cdk:subnet-type
+          Value: Public
+        - Key: Name
+          Value: Lab02Stack/SaasWebVpc/PublicSubnet2
+      VpcId:
+        Ref: SaasWebVpcCCEE099B
+    Metadata:
+      aws:cdk:path: Lab02Stack/SaasWebVpc/PublicSubnet2/Subnet
+  SaasWebVpcPublicSubnet2RouteTable275B871A:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+        - Key: Name
+          Value: Lab02Stack/SaasWebVpc/PublicSubnet2
+      VpcId:
+        Ref: SaasWebVpcCCEE099B
+    Metadata:
+      aws:cdk:path: Lab02Stack/SaasWebVpc/PublicSubnet2/RouteTable
+  SaasWebVpcPublicSubnet2RouteTableAssociation47754960:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: SaasWebVpcPublicSubnet2RouteTable275B871A
+      SubnetId:
+        Ref: SaasWebVpcPublicSubnet2Subnet7D7EB116
+    Metadata:
+      aws:cdk:path: Lab02Stack/SaasWebVpc/PublicSubnet2/RouteTableAssociation
+  SaasWebVpcPublicSubnet2DefaultRoute469F8706:
+    Type: AWS::EC2::Route
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: SaasWebVpcIGW5239B50F
+      RouteTableId:
+        Ref: SaasWebVpcPublicSubnet2RouteTable275B871A
+    DependsOn:
+      - SaasWebVpcVPCGW11B00E02
+    Metadata:
+      aws:cdk:path: Lab02Stack/SaasWebVpc/PublicSubnet2/DefaultRoute
+  SaasWebVpcPrivateAppSubnet1SubnetC411CFA1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-1a
+      CidrBlock: 10.10.2.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: aws-cdk:subnet-name
+          Value: PrivateApp
+        - Key: aws-cdk:subnet-type
+          Value: Isolated
+        - Key: Name
+          Value: Lab02Stack/SaasWebVpc/PrivateAppSubnet1
+      VpcId:
+        Ref: SaasWebVpcCCEE099B
+    Metadata:
+      aws:cdk:path: Lab02Stack/SaasWebVpc/PrivateAppSubnet1/Subnet
+  SaasWebVpcPrivateAppSubnet1RouteTable0B8CD2C0:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+        - Key: Name
+          Value: Lab02Stack/SaasWebVpc/PrivateAppSubnet1
+      VpcId:
+        Ref: SaasWebVpcCCEE099B
+    Metadata:
+      aws:cdk:path: Lab02Stack/SaasWebVpc/PrivateAppSubnet1/RouteTable
+  SaasWebVpcPrivateAppSubnet1RouteTableAssociationE70E455E:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: SaasWebVpcPrivateAppSubnet1RouteTable0B8CD2C0
+      SubnetId:
+        Ref: SaasWebVpcPrivateAppSubnet1SubnetC411CFA1
+    Metadata:
+      aws:cdk:path: Lab02Stack/SaasWebVpc/PrivateAppSubnet1/RouteTableAssociation
+  SaasWebVpcPrivateAppSubnet2Subnet8C354DDC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-1c
+      CidrBlock: 10.10.3.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: aws-cdk:subnet-name
+          Value: PrivateApp
+        - Key: aws-cdk:subnet-type
+          Value: Isolated
+        - Key: Name
+          Value: Lab02Stack/SaasWebVpc/PrivateAppSubnet2
+      VpcId:
+        Ref: SaasWebVpcCCEE099B
+    Metadata:
+      aws:cdk:path: Lab02Stack/SaasWebVpc/PrivateAppSubnet2/Subnet
+  SaasWebVpcPrivateAppSubnet2RouteTable5AFA1DCA:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+        - Key: Name
+          Value: Lab02Stack/SaasWebVpc/PrivateAppSubnet2
+      VpcId:
+        Ref: SaasWebVpcCCEE099B
+    Metadata:
+      aws:cdk:path: Lab02Stack/SaasWebVpc/PrivateAppSubnet2/RouteTable
+  SaasWebVpcPrivateAppSubnet2RouteTableAssociation69FD4555:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: SaasWebVpcPrivateAppSubnet2RouteTable5AFA1DCA
+      SubnetId:
+        Ref: SaasWebVpcPrivateAppSubnet2Subnet8C354DDC
+    Metadata:
+      aws:cdk:path: Lab02Stack/SaasWebVpc/PrivateAppSubnet2/RouteTableAssociation
+  SaasWebVpcIGW5239B50F:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: lab02-saas-web-vpc
+    Metadata:
+      aws:cdk:path: Lab02Stack/SaasWebVpc/IGW
+  SaasWebVpcVPCGW11B00E02:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId:
+        Ref: SaasWebVpcIGW5239B50F
+      VpcId:
+        Ref: SaasWebVpcCCEE099B
+    Metadata:
+      aws:cdk:path: Lab02Stack/SaasWebVpc/VPCGW
+  SaasWebVpcRestrictDefaultSecurityGroupCustomResource05A76AA1:
+    Type: Custom::VpcRestrictDefaultSG
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+          - CustomVpcRestrictDefaultSGCustomResourceProviderHandlerDC833E5E
+          - Arn
+      DefaultSecurityGroupId:
+        Fn::GetAtt:
+          - SaasWebVpcCCEE099B
+          - DefaultSecurityGroup
+      Account: "972803002647"
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: Lab02Stack/SaasWebVpc/RestrictDefaultSecurityGroupCustomResource/Default
+  SaasWebVpcSsmEndpoint45849554:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - Fn::GetAtt:
+            - SsmEndpointSecurityGroup3B5BA187
+            - GroupId
+      ServiceName: com.amazonaws.ap-northeast-1.ssm
+      SubnetIds:
+        - Ref: SaasWebVpcPrivateAppSubnet1SubnetC411CFA1
+        - Ref: SaasWebVpcPrivateAppSubnet2Subnet8C354DDC
+      Tags:
+        - Key: Name
+          Value: lab02-saas-web-vpc
+      VpcEndpointType: Interface
+      VpcId:
+        Ref: SaasWebVpcCCEE099B
+    Metadata:
+      aws:cdk:path: Lab02Stack/SaasWebVpc/SsmEndpoint/Resource
+  SaasWebVpcSsmMessagesEndpoint3C112681:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - Fn::GetAtt:
+            - SsmEndpointSecurityGroup3B5BA187
+            - GroupId
+      ServiceName: com.amazonaws.ap-northeast-1.ssmmessages
+      SubnetIds:
+        - Ref: SaasWebVpcPrivateAppSubnet1SubnetC411CFA1
+        - Ref: SaasWebVpcPrivateAppSubnet2Subnet8C354DDC
+      Tags:
+        - Key: Name
+          Value: lab02-saas-web-vpc
+      VpcEndpointType: Interface
+      VpcId:
+        Ref: SaasWebVpcCCEE099B
+    Metadata:
+      aws:cdk:path: Lab02Stack/SaasWebVpc/SsmMessagesEndpoint/Resource
+  CustomVpcRestrictDefaultSGCustomResourceProviderRole26592FE0:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+      ManagedPolicyArns:
+        - Fn::Sub: arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: Inline
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:AuthorizeSecurityGroupIngress
+                  - ec2:AuthorizeSecurityGroupEgress
+                  - ec2:RevokeSecurityGroupIngress
+                  - ec2:RevokeSecurityGroupEgress
+                Resource:
+                  - Fn::Join:
+                      - ""
+                      - - arn:aws:ec2:ap-northeast-1:972803002647:security-group/
+                        - Fn::GetAtt:
+                            - SaasWebVpcCCEE099B
+                            - DefaultSecurityGroup
+    Metadata:
+      aws:cdk:path: Lab02Stack/Custom::VpcRestrictDefaultSGCustomResourceProvider/Role
+  CustomVpcRestrictDefaultSGCustomResourceProviderHandlerDC833E5E:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: cdk-hnb659fds-assets-972803002647-ap-northeast-1
+        S3Key: 02b51ab524e7bcf8f477de3e71e5f9a72e448301b26ba62e9e75a14f9c55a093.zip
+      Timeout: 900
+      MemorySize: 128
+      Handler: __entrypoint__.handler
+      Role:
+        Fn::GetAtt:
+          - CustomVpcRestrictDefaultSGCustomResourceProviderRole26592FE0
+          - Arn
+      Runtime: nodejs24.x
+      Description: Lambda function for removing all inbound/outbound rules from the VPC default security group
+    DependsOn:
+      - CustomVpcRestrictDefaultSGCustomResourceProviderRole26592FE0
+    Metadata:
+      aws:cdk:path: Lab02Stack/Custom::VpcRestrictDefaultSGCustomResourceProvider/Handler
+      aws:asset:path: asset.02b51ab524e7bcf8f477de3e71e5f9a72e448301b26ba62e9e75a14f9c55a093
+      aws:asset:property: Code
+  AlbSecurityGroup86A59E99:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security Group for Lab02 ALB
+      SecurityGroupIngress:
+        - CidrIp: 219.106.99.20/32
+          Description: Allow HTTP from lab operator
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+      VpcId:
+        Ref: SaasWebVpcCCEE099B
+    Metadata:
+      aws:cdk:path: Lab02Stack/AlbSecurityGroup/Resource
+  AlbSecurityGrouptoLab02StackAppSecurityGroupA09C21A58080626DB6CD:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      Description: Allow traffic to App
+      DestinationSecurityGroupId:
+        Fn::GetAtt:
+          - AppSecurityGroupC396D536
+          - GroupId
+      FromPort: 8080
+      GroupId:
+        Fn::GetAtt:
+          - AlbSecurityGroup86A59E99
+          - GroupId
+      IpProtocol: tcp
+      ToPort: 8080
+    Metadata:
+      aws:cdk:path: Lab02Stack/AlbSecurityGroup/to Lab02StackAppSecurityGroupA09C21A5:8080
+  AppSecurityGroupC396D536:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security Group for Lab02 Web App
+      VpcId:
+        Ref: SaasWebVpcCCEE099B
+    Metadata:
+      aws:cdk:path: Lab02Stack/AppSecurityGroup/Resource
+  AppSecurityGroupfromLab02StackAlbSecurityGroup71FAB7208080D868D676:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Allow HTTP from ALB
+      FromPort: 8080
+      GroupId:
+        Fn::GetAtt:
+          - AppSecurityGroupC396D536
+          - GroupId
+      IpProtocol: tcp
+      SourceSecurityGroupId:
+        Fn::GetAtt:
+          - AlbSecurityGroup86A59E99
+          - GroupId
+      ToPort: 8080
+    Metadata:
+      aws:cdk:path: Lab02Stack/AppSecurityGroup/from Lab02StackAlbSecurityGroup71FAB720:8080
+  AppSecurityGrouptoLab02StackSsmEndpointSecurityGroup4ECEB0B0443C86A34D1:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      Description: Allow HTTPS to SSM endpoints
+      DestinationSecurityGroupId:
+        Fn::GetAtt:
+          - SsmEndpointSecurityGroup3B5BA187
+          - GroupId
+      FromPort: 443
+      GroupId:
+        Fn::GetAtt:
+          - AppSecurityGroupC396D536
+          - GroupId
+      IpProtocol: tcp
+      ToPort: 443
+    Metadata:
+      aws:cdk:path: Lab02Stack/AppSecurityGroup/to Lab02StackSsmEndpointSecurityGroup4ECEB0B0:443
+  SsmEndpointSecurityGroup3B5BA187:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow HTTPS from Lab02 EC2 to SSM endpoints
+      SecurityGroupEgress:
+        - CidrIp: 255.255.255.255/32
+          Description: Disallow all traffic
+          FromPort: 252
+          IpProtocol: icmp
+          ToPort: 86
+      SecurityGroupIngress:
+        - CidrIp:
+            Fn::GetAtt:
+              - SaasWebVpcCCEE099B
+              - CidrBlock
+          Description:
+            Fn::Join:
+              - ""
+              - - "from "
+                - Fn::GetAtt:
+                    - SaasWebVpcCCEE099B
+                    - CidrBlock
+                - :443
+          FromPort: 443
+          IpProtocol: tcp
+          ToPort: 443
+      VpcId:
+        Ref: SaasWebVpcCCEE099B
+    Metadata:
+      aws:cdk:path: Lab02Stack/SsmEndpointSecurityGroup/Resource
+  SsmEndpointSecurityGroupfromLab02StackAppSecurityGroupA09C21A54439A1D5891:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      Description: Allow HTTPS from Web EC2
+      FromPort: 443
+      GroupId:
+        Fn::GetAtt:
+          - SsmEndpointSecurityGroup3B5BA187
+          - GroupId
+      IpProtocol: tcp
+      SourceSecurityGroupId:
+        Fn::GetAtt:
+          - AppSecurityGroupC396D536
+          - GroupId
+      ToPort: 443
+    Metadata:
+      aws:cdk:path: Lab02Stack/SsmEndpointSecurityGroup/from Lab02StackAppSecurityGroupA09C21A5:443
+  WebInstanceRole7E7D0E48:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+        Version: "2012-10-17"
+      Description: IAM Role for Lab02 EC2 SSM access
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/AmazonSSMManagedInstanceCore
+    Metadata:
+      aws:cdk:path: Lab02Stack/WebInstanceRole/Resource
+  WebInstanceInstanceProfile57246EB7:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - Ref: WebInstanceRole7E7D0E48
+    Metadata:
+      aws:cdk:path: Lab02Stack/WebInstance/InstanceProfile
+  WebInstanceF774E10D:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone: ap-northeast-1a
+      IamInstanceProfile:
+        Ref: WebInstanceInstanceProfile57246EB7
+      ImageId:
+        Ref: SsmParameterValueawsserviceamiamazonlinuxlatestal2023amikernel61x8664C96584B6F00A464EAD1953AFF4B05118Parameter
+      InstanceType: t3.micro
+      LaunchTemplate:
+        LaunchTemplateName: Lab02StackWebInstanceLaunchTemplate5D6B8BCB
+        Version:
+          Fn::GetAtt:
+            - WebInstanceLaunchTemplateBF096E66
+            - LatestVersionNumber
+      SecurityGroupIds:
+        - Fn::GetAtt:
+            - AppSecurityGroupC396D536
+            - GroupId
+      SubnetId:
+        Ref: SaasWebVpcPrivateAppSubnet1SubnetC411CFA1
+      Tags:
+        - Key: Name
+          Value: Lab02Stack/WebInstance
+      UserData:
+        Fn::Base64: |-
+          #!/bin/bash
+          mkdir -p /opt/lab02
+          cat > /opt/lab02/server.py <<'PY'
+          from http.server import BaseHTTPRequestHandler, HTTPServer
+          import json
+          import socket
+
+          class Handler(BaseHTTPRequestHandler):
+              def do_GET(self):
+                  if self.path == "/health":
+                      body = {"status": "ok"}
+                  else:
+                      body = {
+                          "message": "Hello from Lab02 EC2",
+                          "hostname": socket.gethostname(),
+                          "path": self.path,
+                      }
+
+                  data = json.dumps(body).encode("utf-8")
+
+                  self.send_response(200)
+                  self.send_header("Content-Type", "application/json")
+                  self.send_header("Content-Length", str(len(data)))
+                  self.end_headers()
+                  self.wfile.write(data)
+
+          HTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
+          PY
+          cat > /etc/systemd/system/lab02-web.service << 'EOF'
+          [Unit]
+          Description=Lab02 Web Application
+          After=network.target
+
+          [Service]
+          ExecStart=/usr/bin/python3 /opt/lab02/server.py
+          Restart=always
+          RestartSec=3
+
+          [Install]
+          WantedBy=multi-user.target
+
+          EOF
+          systemctl daemon-reload
+          systemctl enable --now lab02-web
+    DependsOn:
+      - WebInstanceRole7E7D0E48
+    Metadata:
+      aws:cdk:path: Lab02Stack/WebInstance/Resource
+  WebInstanceLaunchTemplateBF096E66:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        MetadataOptions:
+          HttpTokens: required
+      LaunchTemplateName: Lab02StackWebInstanceLaunchTemplate5D6B8BCB
+    Metadata:
+      aws:cdk:path: Lab02Stack/WebInstance/LaunchTemplate
+  WebAlb916F4A49:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      LoadBalancerAttributes:
+        - Key: deletion_protection.enabled
+          Value: "false"
+      Scheme: internet-facing
+      SecurityGroups:
+        - Fn::GetAtt:
+            - AlbSecurityGroup86A59E99
+            - GroupId
+      Subnets:
+        - Ref: SaasWebVpcPublicSubnet1SubnetE9156DE5
+        - Ref: SaasWebVpcPublicSubnet2Subnet7D7EB116
+      Type: application
+    DependsOn:
+      - SaasWebVpcPublicSubnet1DefaultRouteA0B54CDC
+      - SaasWebVpcPublicSubnet1RouteTableAssociation6B81695B
+      - SaasWebVpcPublicSubnet2DefaultRoute469F8706
+      - SaasWebVpcPublicSubnet2RouteTableAssociation47754960
+    Metadata:
+      aws:cdk:path: Lab02Stack/WebAlb/Resource
+  WebAlbHttpListener3FE89D19:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - TargetGroupArn:
+            Ref: WebAlbHttpListenerWebTargetGroupGroupEFD0DDF2
+          Type: forward
+      LoadBalancerArn:
+        Ref: WebAlb916F4A49
+      Port: 80
+      Protocol: HTTP
+    Metadata:
+      aws:cdk:path: Lab02Stack/WebAlb/HttpListener/Resource
+  WebAlbHttpListenerWebTargetGroupGroupEFD0DDF2:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckPath: /health
+      HealthyThresholdCount: 2
+      Matcher:
+        HttpCode: "200"
+      Port: 8080
+      Protocol: HTTP
+      TargetGroupAttributes:
+        - Key: stickiness.enabled
+          Value: "false"
+      TargetType: instance
+      Targets:
+        - Id:
+            Ref: WebInstanceF774E10D
+          Port: 8080
+      UnhealthyThresholdCount: 2
+      VpcId:
+        Ref: SaasWebVpcCCEE099B
+    Metadata:
+      aws:cdk:path: Lab02Stack/WebAlb/HttpListener/WebTargetGroupGroup/Resource
+  Lab02WebAcl:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      DefaultAction:
+        Allow: {}
+      Name: lab02-web-acl
+      Rules:
+        - Name: AWSManagedRulesCommonRuleSet
+          OverrideAction:
+            Count: {}
+          Priority: 0
+          Statement:
+            ManagedRuleGroupStatement:
+              Name: AWSManagedRulesCommonRuleSet
+              VendorName: AWS
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: true
+            MetricName: CommonRuleSet
+            SampledRequestsEnabled: true
+        - Name: AWSManagedRulesSQLiRuleSet
+          OverrideAction:
+            None: {}
+          Priority: 1
+          Statement:
+            ManagedRuleGroupStatement:
+              Name: AWSManagedRulesSQLiRuleSet
+              VendorName: AWS
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: true
+            MetricName: SQLiRuleSet
+            SampledRequestsEnabled: true
+        - Action:
+            Block: {}
+          Name: Lab02RateLimit
+          Priority: 2
+          Statement:
+            RateBasedStatement:
+              AggregateKeyType: IP
+              EvaluationWindowSec: 60
+              Limit: 100
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: true
+            MetricName: Lab02RateLimit
+            SampledRequestsEnabled: true
+      Scope: REGIONAL
+      VisibilityConfig:
+        CloudWatchMetricsEnabled: true
+        MetricName: Lab02WebAcl
+        SampledRequestsEnabled: true
+    Metadata:
+      aws:cdk:path: Lab02Stack/Lab02WebAcl
+  Lab02WebAclAssociation:
+    Type: AWS::WAFv2::WebACLAssociation
+    Properties:
+      ResourceArn:
+        Ref: WebAlb916F4A49
+      WebACLArn:
+        Fn::GetAtt:
+          - Lab02WebAcl
+          - Arn
+    Metadata:
+      aws:cdk:path: Lab02Stack/Lab02WebAclAssociation
+  Lab02WafLogGroup0CBD253E:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: aws-waf-logs-lab02
+      RetentionInDays: 7
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: Lab02Stack/Lab02WafLogGroup/Resource
+  Lab02WafLogging:
+    Type: AWS::WAFv2::LoggingConfiguration
+    Properties:
+      LogDestinationConfigs:
+        - Fn::GetAtt:
+            - Lab02WafLogGroup0CBD253E
+            - Arn
+      ResourceArn:
+        Fn::GetAtt:
+          - Lab02WebAcl
+          - Arn
+    DependsOn:
+      - Lab02WafLogGroup0CBD253E
+    Metadata:
+      aws:cdk:path: Lab02Stack/Lab02WafLogging
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/+1WS2/jNhD+LatjwKhdd7sL+KY4wUKAd2PYQQrUCBZjaqywoYZcPuS6gv57QUm05WQD9JCiPvSk4bw4M/z0kZN08unX9Od3sLOXvHi6lGKTNisH/InBzn5rkE/S5l7zdZMInRWFQWvRJtPkImFJBX9mf8UFgfsMDnewjxrrN4RupmgrSm/ACUXJdN0kBBWeuNztdVAs/EYKnrCEi8J8AfvUObXs9YjcKgkOixcxDyypNf8aw9oHNtvS/WLG+j1WXZJ1k0ANQsJGSOH2vyuKm9Sa58Ugh8RXUvGnQ9O6T5LrW5qDJ/6YTJ3xyBKh64+zZ+5grSgp1/XHYXq3NDM4DGNo7yyqOJtCzqOKHjI9UIK0VN7hHWwkHvVHXWat4qJLcHBmCyNqcPjmYNuCtGcw3v/LeKsyOqjl5NAQRhIdCGtYZc4Bf6yQHOv8tsDxXvMbKrQSFMBVax4ZEk0tOCbTE97Uyrgo9ri8JnuNW/DS9b9KO7bcUIB1EX8ii9wb4fafjfLaJtN1cpE8RDK2Yasf83IbRnyupcVLIU6RrcapTmYKUqpdJuWtdxvlqTicd4GWG6FPIVUUOZXhoJdeYnflcaCcpCDsNX3lXBEhD6HxxvQkvnscgNdxcqe+SB6GvDfjtMH2zOWtKv5B6v989zedaVfOv5m5vz7GgHqh6Mf5Qj1Uw3KyDohjeHoN4oDhnoT4oyDMKyhHnDVIBr97YTCvCltPYgNGycMjarxf7MaiuQYHx2Srf/gLxUKD3NPhHVY6uLRMQJU2SyVDF2Ctr7C42oeM2gjiQoPMOFee3JErfYUhIOMjkLyGmy9AUGKxUFLwfXd21ViTmciwfaUh77jihVFbIbFlKME6waWCYgMSiAsq60naZFpLwTuqnisorjobmnWEZtfyyMDGAcI6pKPzMWAwjJ3vwJToDjgZLVu2g22oZbal33CTzebsID17dsxVWQoqT17cLZOqtGkzV2WkNTmIX48UbLBSNcg4xzBuZ9S+szikfuyf2qHfPrxt2RKt8iacvLdOVXG5jp2+Yl8YVYsCzRVYZJm16FYOQuUhZgEGKnRowuLWO+1dyxZ796jop1/S9x/SD+/+sEJcGk9OVJgu++/fR2MoCMkMAAA=
+    Metadata:
+      aws:cdk:path: Lab02Stack/CDKMetadata/Default
+Parameters:
+  SsmParameterValueawsserviceamiamazonlinuxlatestal2023amikernel61x8664C96584B6F00A464EAD1953AFF4B05118Parameter:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+Outputs:
+  WebInstanceId:
+    Value:
+      Ref: WebInstanceF774E10D
+  WebInstancePrivateIp:
+    Value:
+      Fn::GetAtt:
+        - WebInstanceF774E10D
+        - PrivateIp
+  AlbDnsName:
+    Value:
+      Fn::GetAtt:
+        - WebAlb916F4A49
+        - DNSName
+  AlbUrl:
+    Value:
+      Fn::Join:
+        - ""
+        - - http://
+          - Fn::GetAtt:
+              - WebAlb916F4A49
+              - DNSName
+  VpcId:
+    Value:
+      Ref: SaasWebVpcCCEE099B
+
