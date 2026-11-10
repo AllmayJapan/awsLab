@@ -1,3 +1,9 @@
+import os
+
+from lab02.resources.monitoring import (
+    create_waf_logging,
+    create_waf_alerting,
+)
 from aws_cdk import Stack, CfnOutput
 from constructs import Construct
 
@@ -58,6 +64,18 @@ class Lab02Stack(Stack):
         create_waf_logging(
             self,
             web_acl,
+        )
+
+        alert_email = os.environ.get("ALERT_EMAIL")
+
+        if not alert_email:
+            raise ValueError(
+                "ALERT_EMAIL is not configured"
+            )
+
+        create_waf_alerting(
+            self,
+            alert_email,
         )
 
         # Outputs
