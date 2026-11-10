@@ -1,0 +1,82 @@
+2026-11-10T03: 45: 12 {
+    "timestamp": 1794282312932,
+    "formatVersion": 1,
+    "webaclId": "arn:aws:wafv2:ap-northeast-1:972803002647:regional/webacl/lab02-web-acl/18d3e421-47c7-42d3-bc83-af1ad5610d18",
+    "terminatingRuleId": "Default_Action",
+    "terminatingRuleType": "REGULAR",
+    "action": "ALLOW",
+    "terminatingRuleMatchDetails": [],
+    "httpSourceName": "ALB",
+    "httpSourceId": "972803002647-app/Lab02S-WebAl-zE0omlP3FDzY/4b8b4c7e057bc034",
+    "ruleGroupList": [
+        {
+            "ruleGroupId": "AWS#AWSManagedRulesCommonRuleSet",
+            "terminatingRule": {
+                "ruleId": "CrossSiteScripting_QUERYARGUMENTS",
+                "action": "BLOCK",
+                "ruleMatchDetails": null
+            },
+            "nonTerminatingMatchingRules": [],
+            "excludedRules": null,
+            "customerConfig": null
+        },
+        {
+            "ruleGroupId": "AWS#AWSManagedRulesSQLiRuleSet",
+            "terminatingRule": null,
+            "nonTerminatingMatchingRules": [],
+            "excludedRules": null,
+            "customerConfig": null
+        }
+    ],
+    "rateBasedRuleList": [],
+    "nonTerminatingMatchingRules": [
+        {
+            "ruleId": "AWSManagedRulesCommonRuleSet",
+            "action": "COUNT",
+            "ruleMatchDetails": [
+                {
+                    "conditionType": "XSS",
+                    "location": "ALL_QUERY_ARGS",
+                    "matchedData": [
+                        "<",
+                        "script"
+                    ],
+                    "matchedFieldName": "q"
+                }
+            ]
+        }
+    ],
+    "requestHeadersInserted": null,
+    "responseCodeSent": null,
+    "httpRequest": {
+        "clientIp": "219.106.99.20",
+        "country": "JP",
+        "headers": [
+            {
+                "name": "Host",
+                "value": "lab02s-webal-ze0omlp3fdzy-775356634.ap-northeast-1.elb.amazonaws.com"
+            },
+            {
+                "name": "User-Agent",
+                "value": "curl/8.18.0"
+            },
+            {
+                "name": "Accept",
+                "value": "*/*"
+            }
+        ],
+        "uri": "/",
+        "args": "q=%3cscript%3ealert%281%29%3c%2fscript%3e",
+        "httpVersion": "HTTP/1.1",
+        "httpMethod": "GET",
+        "requestId": "1-6af29348-720aef4875ac70ec0605bd9f",
+        "fragment": "",
+        "scheme": "http",
+        "host": "Lab02S-WebAl-zE0omlP3FDzY-775356634.ap-northeast-1.elb.amazonaws.com"
+    },
+    "labels": [
+        {
+            "name": "awswaf:managed:aws:core-rule-set:CrossSiteScripting_QueryArguments"
+        }
+    ]
+}
