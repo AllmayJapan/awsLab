@@ -7,6 +7,8 @@ from aws_cdk import (
     aws_elasticloadbalancingv2_targets as targets,
     aws_iam as iam,
     aws_wafv2 as wafv2,
+    aws_logs as logs,
+    RemovalPolicy,
 )
 from constructs import Construct
 
@@ -270,7 +272,7 @@ class Lab02Stack(Stack):
                     name="AWSManagedRulesSQLiRuleSet",
                     priority=1,
                     override_action=wafv2.CfnWebACL.OverrideActionProperty(
-                        count={}
+                        none={}
                     ),
                     statement=wafv2.CfnWebACL.StatementProperty(
                         managed_rule_group_statement=(
@@ -288,8 +290,50 @@ class Lab02Stack(Stack):
                         )
                     ),
                 ),
+                wafv2.CfnWebACL.RuleProperty(
+                    name="Lab02RateLimit",
+                    priority=2,
+                    action=wafv2.CfnWebACL.RuleActionProperty(
+                        count={}
+                    ),
+                    statement=wafv2.CfnWebACL.StatementProperty(
+                        rate_based_statement=(
+                            wafv2.CfnWebACL.RateBasedStatementProperty(
+                                aggregate_key_type="IP",
+                                limit=100,
+                                evaluation_window_sec=60,
+                            )
+                        )
+                    ),
+                    visibility_config=(
+                        wafv2.CfnWebACL.VisibilityConfigProperty(
+                            cloud_watch_metrics_enabled=True,
+                            metric_name="Lab02RateLimit",
+                            sampled_requests_enabled=True,
+                        )
+                    ),
+                ),
             ],
         )
+
+        waf_log_group = logs.LogGroup(
+            self,
+            "Lab02WafLogGroup",
+            log_group_name="aws-waf-logs-lab02",
+            retention=logs.RetentionDays.ONE_WEEK,
+            removal_policy=RemovalPolicy.DESTROY,
+        )
+
+        waf_logging = wafv2.CfnLoggingConfiguration(
+            self,
+            "Lab02WafLogging",
+            resource_arn=web_acl.attr_arn,
+            log_destination_configs=[
+                waf_log_group.log_group_arn
+            ],
+        )
+
+        waf_logging.node.add_dependency(waf_log_group)
 
         # Web ACLをALBに関連付け
         wafv2.CfnWebACLAssociation(
