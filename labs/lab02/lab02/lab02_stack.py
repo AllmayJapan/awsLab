@@ -7,7 +7,7 @@ from lab02.resources.load_balancer import create_load_balancer
 from lab02.resources.waf import create_waf
 from lab02.resources.monitoring import create_waf_logging
 
-
+# Hello World
 class Lab02Stack(Stack):
 
     def __init__(
