@@ -355,6 +355,27 @@ class Lab01Stack(Stack):
                     ),
                     visibility_config=visibility("LabMarker"),
                 ),
+                wafv2.CfnWebACL.RuleProperty(
+                    name="CountAdmin",
+                    priority=50,
+                    action=wafv2.CfnWebACL.RuleActionProperty(count={}),
+                    statement=wafv2.CfnWebACL.StatementProperty(
+                        byte_match_statement=wafv2.CfnWebACL.ByteMatchStatementProperty(
+                            field_to_match=wafv2.CfnWebACL.FieldToMatchProperty(
+                                uri_path={}
+                            ),
+                            positional_constraint="CONTAINS",
+                            search_string="admin",
+                            text_transformations=[
+                                wafv2.CfnWebACL.TextTransformationProperty(
+                                    priority=0,
+                                    type="LOWERCASE",
+                                )
+                            ],
+                        )
+                    ),
+                    visibility_config=visibility("CountAdmin"),
+                ),
             ],
         )
 
