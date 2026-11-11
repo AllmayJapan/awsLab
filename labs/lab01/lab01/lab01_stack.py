@@ -362,7 +362,7 @@ class Lab01Stack(Stack):
                     statement=wafv2.CfnWebACL.StatementProperty(
                         byte_match_statement=wafv2.CfnWebACL.ByteMatchStatementProperty(
                             field_to_match=wafv2.CfnWebACL.FieldToMatchProperty(
-                                uri_path={}
+                                query_string={}
                             ),
                             positional_constraint="CONTAINS",
                             search_string="admin",
