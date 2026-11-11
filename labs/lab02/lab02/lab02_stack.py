@@ -12,6 +12,10 @@ from lab02.resources.compute import create_compute
 from lab02.resources.load_balancer import create_load_balancer
 from lab02.resources.waf import create_waf
 from lab02.resources.monitoring import create_waf_logging
+from lab02.resources.ip_list import (
+    create_ip_list_bucket,
+    create_ip_list_sync,
+)
 
 # Hello World
 class Lab02Stack(Stack):
@@ -55,11 +59,19 @@ class Lab02Stack(Stack):
         )
 
         # WAF
-        web_acl = create_waf(
+        web_acl, blocked_ip_set = create_waf(
             self,
             alb,
         )
 
+        # Ip List strage
+        ip_list_bucket = create_ip_list_bucket(self)
+
+        ip_list_sync = create_ip_list_sync(
+            self,
+            ip_list_bucket,
+            blocked_ip_set,
+        )
         # Monitoring
         create_waf_logging(
             self,
@@ -107,4 +119,22 @@ class Lab02Stack(Stack):
             self,
             "VpcId",
             value=network.vpc.vpc_id,
+        )
+
+        CfnOutput(
+            self,
+            "IpListBucketName",
+            value=ip_list_bucket.bucket_name,
+        )
+
+        CfnOutput(
+            self,
+            "BlockedIpSetId",
+            value=blocked_ip_set.attr_id,
+        )
+
+        CfnOutput(
+            self,
+            "IpListSyncFunctionName",
+            value=ip_list_sync.function_name,
         )
