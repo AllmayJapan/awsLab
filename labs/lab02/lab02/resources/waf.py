@@ -41,7 +41,7 @@ def managed_rule(
 def rate_limit_rule():
     return wafv2.CfnWebACL.RuleProperty(
         name="Lab02RateLimit",
-        priority=2,
+        priority=30,
         action=wafv2.CfnWebACL.RuleActionProperty(
             block={}
         ),
@@ -61,7 +61,17 @@ def rate_limit_rule():
 def create_waf(
     scope: Construct,
     alb: elbv2.ApplicationLoadBalancer,
-) -> wafv2.CfnWebACL:
+) -> tuple[wafv2.CfnWebACL, wafv2.CfnIPSet]:
+
+    blocked_ip_set = wafv2.CfnIPSet(
+        scope,
+        "Lab02BlockedIpSet",
+        name="lab02-blocked-ipv4",
+        scope="REGIONAL",
+        ip_address_version="IPV4",
+        addresses=[],
+        description="IPv4 block list synchronized from S3",
+    )
 
     web_acl = wafv2.CfnWebACL(
         scope,
@@ -73,15 +83,31 @@ def create_waf(
         ),
         visibility_config=visibility("Lab02WebAcl"),
         rules=[
+            wafv2.CfnWebACL.RuleProperty(
+                name="BlockListedIPs",
+                priority=0,
+                action=wafv2.CfnWebACL.RuleActionProperty(
+                    block={}
+                ),
+                statement=wafv2.CfnWebACL.StatementProperty(
+                    ip_set_reference_statement=(
+                        wafv2.CfnWebACL.IPSetReferenceStatementProperty(
+                            arn=blocked_ip_set.attr_arn
+                        )
+                    )
+                ),
+                visibility_config=visibility("BlockListedIPs"),
+            ),
+
             managed_rule(
                 "AWSManagedRulesCommonRuleSet",
-                0,
+                10,
                 "CommonRuleSet",
                 block_enabled=False,
             ),
             managed_rule(
                 "AWSManagedRulesSQLiRuleSet",
-                1,
+                20,
                 "SQLiRuleSet",
                 block_enabled=True,
             ),
@@ -96,4 +122,4 @@ def create_waf(
         web_acl_arn=web_acl.attr_arn,
     )
 
-    return web_acl
+    return web_acl, blocked_ip_set
