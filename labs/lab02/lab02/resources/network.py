@@ -52,6 +52,12 @@ def create_network(
         description="Allow HTTP from lab operator",
     )
 
+    alb_sg.add_ingress_rule(
+        peer=ec2.Peer.ipv4("20.27.8.194/32"),
+        connection=ec2.Port.tcp(80),
+        description="Allow HTTP from Azure test desktop",
+    )
+
     app_sg = ec2.SecurityGroup(
         scope,
         "AppSecurityGroup",

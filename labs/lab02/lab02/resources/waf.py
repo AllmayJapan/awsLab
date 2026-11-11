@@ -99,6 +99,22 @@ def create_waf(
                 visibility_config=visibility("BlockListedIPs"),
             ),
 
+            wafv2.CfnWebACL.RuleProperty(
+                name="AzureAsnTest",
+                priority=5,
+                action=wafv2.CfnWebACL.RuleActionProperty(
+                    count={}
+                ),
+                statement=wafv2.CfnWebACL.StatementProperty(
+                    asn_match_statement=(
+                        wafv2.CfnWebACL.AsnMatchStatementProperty(
+                            asn_list=[8075],
+                        )
+                    )
+                ),
+                visibility_config=visibility("AzureAsnTest"),
+            ),
+
             managed_rule(
                 "AWSManagedRulesCommonRuleSet",
                 10,
