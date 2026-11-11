@@ -1,0 +1,91 @@
+name: Lab02 Deploy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lab02-deploy
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/lab02-ci.yml
+
+  deploy:
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    environment: lab02
+
+    permissions:
+      contents: read
+      id-token: write
+
+    defaults:
+      run:
+        working-directory: labs/lab02
+
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
+      ALLOWED_IPV4: ${{ vars.ALLOWED_IPV4 }}
+      ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Check configuration
+        run: |
+          test -n "$AWS_REGION" || {
+            echo "::error::AWS_REGION is missing"; exit 1;
+          }
+          test -n "$AWS_ROLE_ARN" || {
+            echo "::error::AWS_ROLE_ARN is missing"; exit 1;
+          }
+          test -n "$ALLOWED_IPV4" || {
+            echo "::error::ALLOWED_IPV4 is missing"; exit 1;
+          }
+          test -n "$ALERT_EMAIL" || {
+            echo "::error::ALERT_EMAIL is missing"; exit 1;
+          }
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          npm install --global aws-cdk@2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Show infrastructure changes
+        run: |
+          cdk diff Lab02Stack \
+            -c "allowedIpv4=$ALLOWED_IPV4"
+
+      - name: Deploy
+        run: |
+          cdk deploy Lab02Stack \
+            -c "allowedIpv4=$ALLOWED_IPV4" \
+            --require-approval never
