@@ -1,0 +1,1 @@
+This object exists. CloudFront WAF should block this path before S3 serves it.
